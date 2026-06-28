@@ -1,0 +1,480 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ORGANISATIONS AND USERS ─────────────────────────────────────
+
+model Organisation {
+  id                String    @id @default(cuid())
+  name              String
+  domain            String?
+  plan              Plan      @default(STARTER)
+  stripeCustomerId  String?   @unique
+  stripeSubId       String?   @unique
+  monthlyLeadLimit  Int       @default(250)
+  leadsUsedThisMonth Int      @default(0)
+  seats             Int       @default(1)
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  users             User[]
+  icpProfiles       ICPProfile[]
+  leads             Lead[]
+  sequences         Sequence[]
+  meetings          Meeting[]
+  apiKeys           APIKey[]
+  aiLogs            AILog[]
+  emailSettings     EmailSettings?
+
+  @@map("organisations")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  clerkId       String    @unique
+  email         String    @unique
+  firstName     String
+  lastName      String
+  role          UserRole  @default(MEMBER)
+  orgId         String
+  org           Organisation @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  assignedMeetings Meeting[]
+  inboxActions     InboxAction[]
+
+  @@map("users")
+}
+
+// ─── ICP CONFIGURATION ───────────────────────────────────────────
+
+model ICPProfile {
+  id              String    @id @default(cuid())
+  orgId           String
+  org             Organisation @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name            String
+  isDefault       Boolean   @default(false)
+  industries      String[]
+  jobTitles       String[]
+  seniorityLevels String[]
+  companySizeMin  Int       @default(10)
+  companySizeMax  Int       @default(5000)
+  revenueMin      Float?
+  revenueMax      Float?
+  geographies     String[]
+  techStack       String[]
+  intentKeywords  String[]
+  excludeKeywords String[]
+  customFilters   Json?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("icp_profiles")
+}
+
+// ─── LEADS ───────────────────────────────────────────────────────
+
+model Lead {
+  id                String      @id @default(cuid())
+  orgId             String
+  org               Organisation @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  firstName         String
+  lastName          String
+  email             String
+  phone             String?
+  linkedinUrl       String?
+  jobTitle          String
+  seniorityLevel    String?
+  companyName       String
+  companyDomain     String?
+  companySize       Int?
+  companyRevenue    Float?
+  industry          String?
+  geography         String?
+  timezone          String?
+  techStack         String[]
+  fitScore          Int         @default(0)
+  fitScoreReasons   String[]
+  intentScore       Int         @default(0)
+  intentSignals     String[]
+  status            LeadStatus  @default(PENDING_REVIEW)
+  source            LeadSource  @default(APOLLO)
+  enrichedData      Json?
+  linkedinData      Json?
+  companyData       Json?
+  lastActivityAt    DateTime?
+  isOnDNC           Boolean     @default(false)
+  unsubscribedAt    DateTime?
+  bouncedAt         DateTime?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  enrollments       SequenceEnrollment[]
+  activities        OutreachActivity[]
+  replies           Reply[]
+  qualScore         QualificationScore?
+  meeting           Meeting?
+  inboxItems        InboxItem[]
+
+  @@unique([orgId, email])
+  @@map("leads")
+}
+
+// ─── SEQUENCES ───────────────────────────────────────────────────
+
+model Sequence {
+  id            String          @id @default(cuid())
+  orgId         String
+  org           Organisation    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name          String
+  description   String?
+  status        SequenceStatus  @default(DRAFT)
+  steps         Json            // Array of SequenceStep objects
+  settings      Json?           // Sending windows, timezone, daily limits
+  icpProfileId  String?
+  totalEnrolled Int             @default(0)
+  totalCompleted Int            @default(0)
+  totalMeetings  Int            @default(0)
+  replyRate     Float           @default(0)
+  meetingRate   Float           @default(0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  enrollments   SequenceEnrollment[]
+
+  @@map("sequences")
+}
+
+model SequenceEnrollment {
+  id              String            @id @default(cuid())
+  leadId          String
+  lead            Lead              @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  sequenceId      String
+  sequence        Sequence          @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  currentStepIndex Int              @default(0)
+  status          EnrollmentStatus  @default(ACTIVE)
+  pausedReason    String?
+  nextStepAt      DateTime?
+  startedAt       DateTime          @default(now())
+  completedAt     DateTime?
+  exitReason      String?
+
+  @@unique([leadId, sequenceId])
+  @@map("sequence_enrollments")
+}
+
+// ─── OUTREACH ACTIVITIES ─────────────────────────────────────────
+
+model OutreachActivity {
+  id              String          @id @default(cuid())
+  leadId          String
+  lead            Lead            @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  channel         Channel
+  subject         String?
+  messageContent  String
+  messageVariant  String?         // A or B for A/B testing
+  status          ActivityStatus  @default(PENDING)
+  scheduledAt     DateTime?
+  sentAt          DateTime?
+  openedAt        DateTime?
+  clickedAt       DateTime?
+
+  providerMessageId String?       // SendGrid/Brevo message ID
+  createdAt       DateTime        @default(now())
+
+  replies         Reply[]
+
+  @@map("outreach_activities")
+}
+
+model Reply {
+  id              String          @id @default(cuid())
+  leadId          String
+  lead            Lead            @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  activityId      String?
+  activity        OutreachActivity? @relation(fields: [activityId], references: [id])
+  channel         Channel
+  content         String
+  rawContent      String?
+  classification  ReplyClassification
+  sentiment       String?
+  keyPoints       String[]
+  suggestedAction String?
+  aiResponse      String?         // AI-generated response to this reply
+  aiResponseSent  Boolean         @default(false)
+  handledBy       String?         // userId if human handled it
+  handledAt       DateTime?
+  receivedAt      DateTime        @default(now())
+
+  inboxItem       InboxItem?
+
+  @@map("replies")
+}
+
+// ─── QUALIFICATION ───────────────────────────────────────────────
+
+model QualificationScore {
+  id              String    @id @default(cuid())
+  leadId          String    @unique
+  lead            Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  budgetScore     Int       @default(0)
+  authorityScore  Int       @default(0)
+  needScore       Int       @default(0)
+  timelineScore   Int       @default(0)
+  totalScore      Int       @default(0)
+  budgetNotes     String?
+  authorityNotes  String?
+  needNotes       String?
+  timelineNotes   String?
+  conversationHistory Json? // Full Q&A thread
+  isQualified     Boolean   @default(false)
+  qualifiedAt     DateTime?
+  assessedAt      DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("qualification_scores")
+}
+
+// ─── MEETINGS ────────────────────────────────────────────────────
+
+model Meeting {
+  id              String        @id @default(cuid())
+  leadId          String        @unique
+  lead            Lead          @relation(fields: [leadId], references: [id])
+  orgId           String
+  org             Organisation  @relation(fields: [orgId], references: [id])
+  aeUserId        String?
+  ae              User?         @relation(fields: [aeUserId], references: [id])
+  scheduledAt     DateTime
+  durationMins    Int           @default(30)
+  calendarEventId String?
+  calendlyEventId String?
+  meetLink        String?
+  briefContent    String?       // AI-generated AE handoff brief
+  briefSentAt     DateTime?
+  status          MeetingStatus @default(SCHEDULED)
+  outcome         String?
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("meetings")
+}
+
+// ─── HUMAN INBOX ─────────────────────────────────────────────────
+
+model InboxItem {
+  id          String        @id @default(cuid())
+  orgId       String
+  leadId      String
+  lead            Lead          @relation(fields: [leadId], references: [id])
+  replyId     String?       @unique
+  reply       Reply?        @relation(fields: [replyId], references: [id])
+  type        InboxItemType
+  priority    Priority      @default(MEDIUM)
+  title       String
+  description String?
+  aiSuggestion String?
+  status      InboxStatus   @default(PENDING)
+  resolvedAt  DateTime?
+  createdAt   DateTime      @default(now())
+
+  actions     InboxAction[]
+
+  @@map("inbox_items")
+}
+
+model InboxAction {
+  id          String    @id @default(cuid())
+  inboxItemId String
+  inboxItem   InboxItem @relation(fields: [inboxItemId], references: [id])
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  action      String    // APPROVED, REJECTED, EDITED, SENT_REPLY, etc.
+  notes       String?
+  createdAt   DateTime  @default(now())
+
+  @@map("inbox_actions")
+}
+
+// ─── SETTINGS AND KEYS ───────────────────────────────────────────
+
+model EmailSettings {
+  id              String        @id @default(cuid())
+  orgId           String        @unique
+  org             Organisation  @relation(fields: [orgId], references: [id])
+  fromName        String
+  fromEmail       String
+  replyToEmail    String?
+  signature       String?
+  provider        EmailProvider @default(BREVO)
+  dailyLimit      Int           @default(100)
+  sendingWindows  Json?         // days of week and hours
+  warmupEnabled   Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("email_settings")
+}
+
+model APIKey {
+  id          String    @id @default(cuid())
+  orgId       String
+  org             Organisation @relation(fields: [orgId], references: [id])
+  service     String    // APOLLO, HUNTER, BREVO, HUBSPOT, etc.
+  keyHash     String    // AES-256 encrypted
+  isActive    Boolean   @default(true)
+  lastUsedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([orgId, service])
+  @@map("api_keys")
+}
+
+model AILog {
+  id          String    @id @default(cuid())
+  orgId       String
+  org             Organisation @relation(fields: [orgId], references: [id])
+  leadId      String?
+  agentType   String    // SCORING, MESSAGING, CLASSIFICATION, QUALIFICATION, HANDOFF
+  model       String    // gemini-1.5-flash, claude-sonnet-4-6, llama-3.1-70b
+  inputTokens Int       @default(0)
+  outputTokens Int      @default(0)
+  costUSD     Float     @default(0)
+  latencyMs   Int?
+  success     Boolean   @default(true)
+  error       String?
+  createdAt   DateTime  @default(now())
+
+  @@map("ai_logs")
+}
+
+// ─── ENUMS ───────────────────────────────────────────────────────
+
+enum Plan {
+  STARTER
+  GROWTH
+  ENTERPRISE
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  MEMBER
+  AE
+}
+
+enum LeadStatus {
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  IN_SEQUENCE
+  REPLIED
+  INTERESTED
+  QUALIFYING
+  MEETING_READY
+  MEETING_BOOKED
+  DISQUALIFIED
+  NOT_NOW
+  ON_DNC
+}
+
+enum LeadSource {
+  APOLLO
+  LINKEDIN
+  HUNTER
+  MANUAL
+  CSV_IMPORT
+  PEOPLE_DATA_LABS
+}
+
+enum SequenceStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  EXITED
+  BOUNCED
+}
+
+enum Channel {
+  EMAIL
+  LINKEDIN
+  SMS
+  CALL_REMINDER
+}
+
+enum ActivityStatus {
+  PENDING
+  SENT
+  OPENED
+  CLICKED
+  BOUNCED
+  FAILED
+}
+
+enum ReplyClassification {
+  INTERESTED
+  NEEDS_MORE_INFO
+  OBJECTION
+  NOT_NOW
+  UNSUBSCRIBE
+  OUT_OF_OFFICE
+  WRONG_PERSON
+  POSITIVE_REFERRAL
+  SPAM
+  NEGATIVE
+}
+
+enum MeetingStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  NO_SHOW
+  CANCELLED
+  RESCHEDULED
+}
+
+enum InboxItemType {
+  LEAD_APPROVAL
+  HOT_REPLY
+  OBJECTION_REVIEW
+  QUALIFIED_LEAD
+  MESSAGE_PREVIEW
+  ESCALATION
+  MEETING_BRIEF
+}
+
+enum InboxStatus {
+  PENDING
+  IN_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum EmailProvider {
+  BREVO
+  AMAZON_SES
+  SENDGRID
+}

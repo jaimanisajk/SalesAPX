@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+/npm-debug.log*
+
+# Next.js build output
+.next/
+out/
+
+# Turborepo
+.turbo/
+
+# Nest.js/Express build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Environment variables (Crucial for security!)
+.env
+.env.local
+.env.production
+.env.development
+.env.local.production
+.env.local.development
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDE Files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
