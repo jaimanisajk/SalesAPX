@@ -9,6 +9,7 @@ import leadRoutes from "./routes/leadRoutes";
 import emailRoutes from "./routes/emailRoutes";
 import sequenceRoutes from "./routes/sequenceRoutes";
 import copywritingRoutes from "./routes/copywritingRoutes";
+import inboxRoutes from "./routes/inboxRoutes";
 
 import "./services/queue/outreachWorker";
 
@@ -43,6 +44,7 @@ app.use("/api/leads", leadRoutes);
 app.use("/api/emails", emailRoutes);
 app.use("/api/sequences", sequenceRoutes);
 app.use("/api/copywriter", copywritingRoutes);
+app.use("/api/inbox", inboxRoutes);
 
 // Health check endpoint
 app.get("/health", (req: Request, res: Response) => {
