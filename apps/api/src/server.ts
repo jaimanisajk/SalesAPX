@@ -10,6 +10,8 @@ import emailRoutes from "./routes/emailRoutes";
 import sequenceRoutes from "./routes/sequenceRoutes";
 import copywritingRoutes from "./routes/copywritingRoutes";
 
+import "./services/queue/outreachWorker";
+
 // Load environment variables
 dotenv.config();
 
