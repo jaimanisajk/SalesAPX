@@ -6,6 +6,7 @@ import { PrismaClient } from "@prisma/client";
 
 import icpRoutes from "./routes/icpRoutes";
 import leadRoutes from "./routes/leadRoutes";
+import emailRoutes from "./routes/emailRoutes";
 
 // Load environment variables
 dotenv.config();
@@ -35,6 +36,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // Register routers
 app.use("/api/icp", icpRoutes);
 app.use("/api/leads", leadRoutes);
+app.use("/api/emails", emailRoutes);
 
 // Health check endpoint
 app.get("/health", (req: Request, res: Response) => {

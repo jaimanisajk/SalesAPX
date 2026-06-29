@@ -31,6 +31,7 @@ model Organisation {
   apiKeys           APIKey[]
   aiLogs            AILog[]
   emailSettings     EmailSettings?
+  emailAccounts     EmailAccount[]
 
   @@map("organisations")
 }
@@ -477,4 +478,35 @@ enum EmailProvider {
   BREVO
   AMAZON_SES
   SENDGRID
+}
+
+model EmailAccount {
+  id              String        @id @default(cuid())
+  orgId           String
+  org             Organisation  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  email           String        @unique
+  name            String
+  provider        String        // "GMAIL" | "OUTLOOK" | "SMTP"
+  smtpHost        String?
+  smtpPort        Int?
+  smtpUser        String?
+  smtpPass        String?       // AES-256 encrypted
+  imapHost        String?
+  imapPort        Int?
+  imapUser        String?
+  imapPass        String?       // AES-256 encrypted
+  oauthToken      Json?         // Refresh token, access token
+  dailyLimit      Int           @default(100)
+  sentCountToday  Int           @default(0)
+  warmupStatus    String        @default("OFF") // "OFF" | "WARMUP"
+  spfValid        Boolean       @default(false)
+  dkimValid       Boolean       @default(false)
+  dmarcValid      Boolean       @default(false)
+  mxValid         Boolean       @default(false)
+  lastDnsCheckAt  DateTime?
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("email_accounts")
 }
