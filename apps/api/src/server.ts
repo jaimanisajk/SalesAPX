@@ -12,6 +12,7 @@ import copywritingRoutes from "./routes/copywritingRoutes";
 import inboxRoutes from "./routes/inboxRoutes";
 import qualificationRoutes from "./routes/qualificationRoutes";
 import meetingRoutes from "./routes/meetingRoutes";
+import analyticsRoutes from "./routes/analyticsRoutes";
 
 import "./services/queue/outreachWorker";
 
@@ -49,6 +50,7 @@ app.use("/api/copywriter", copywritingRoutes);
 app.use("/api/inbox", inboxRoutes);
 app.use("/api/qualifications", qualificationRoutes);
 app.use("/api/meetings", meetingRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 // Health check endpoint
 app.get("/health", (req: Request, res: Response) => {

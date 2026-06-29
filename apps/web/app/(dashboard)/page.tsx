@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import {
   Users,
@@ -11,44 +11,74 @@ import {
   TrendingUp,
   Sparkles,
   Zap,
+  DollarSign,
+  Layers,
+  Activity,
+  Cpu,
 } from "lucide-react";
+import Link from "next/link";
+
+interface AnalyticsData {
+  totals: {
+    leads: number;
+    contacted: number;
+    replied: number;
+    meetingsBooked: number;
+    onDnc: number;
+  };
+  rates: {
+    openRate: number;
+    replyRate: number;
+    meetingRate: number;
+  };
+  aiUsage: {
+    callsCount: number;
+    costUSD: number;
+  };
+}
 
 export default function DashboardPage() {
   const { user } = useUser();
+  const [data, setData] = useState<AnalyticsData | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const stats = [
-    {
-      name: "Leads Approved",
-      value: "1,248",
-      change: "+12.3%",
-      changeType: "increase",
-      icon: Users,
-    },
-    {
-      name: "Active In Sequence",
-      value: "842",
-      change: "+8.4%",
-      changeType: "increase",
-      icon: GitFork,
-    },
-    {
-      name: "Positive Replies",
-      value: "94",
-      change: "+24.5%",
-      changeType: "increase",
-      icon: CheckCircle,
-    },
-    {
-      name: "Meetings Booked",
-      value: "28",
-      change: "+18.2%",
-      changeType: "increase",
-      icon: Calendar,
-    },
-  ];
+  const fetchAnalytics = async () => {
+    setLoading(true);
+    try {
+      // Mock fetch GET /api/analytics
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      
+      setData({
+        totals: {
+          leads: 124,
+          contacted: 86,
+          replied: 16,
+          meetingsBooked: 4,
+          onDnc: 2,
+        },
+        rates: {
+          openRate: 72.4,
+          replyRate: 18.6,
+          meetingRate: 25.0,
+        },
+        aiUsage: {
+          callsCount: 68,
+          costUSD: 0.081,
+        }
+      });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, []);
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-8 max-w-7xl mx-auto animate-in fade-in duration-300">
       {/* Welcome Banner */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-900/50 via-indigo-900/40 to-purple-900/50 p-8 border border-indigo-500/20 backdrop-blur-md">
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl" />
@@ -58,163 +88,168 @@ export default function DashboardPage() {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
               <Sparkles className="h-3 w-3" />
-              AI SDR Pipeline Active
+              AI SDR Agents Pipeline Active
             </div>
             <h1 className="text-3xl font-extrabold tracking-tight text-white md:text-4xl">
               Welcome back, {user?.firstName || "SDR Leader"}!
             </h1>
             <p className="text-slate-300 max-w-xl text-sm md:text-base">
-              Your AI agents are currently prospecting, customizing messages, and qualifying leads. You have 3 hot replies requiring manual review.
+              Your outbound engines are currently running round-robin rotation limits. Review hot replies and BANT qualified targets below.
             </p>
           </div>
           <div className="flex-shrink-0 flex gap-3">
-            <button className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-all duration-200 shadow-lg shadow-indigo-600/30 gap-2">
+            <Link
+              href="/campaigns/new"
+              className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-all duration-205 shadow-lg shadow-indigo-600/30 gap-2 font-bold"
+            >
               <Zap className="h-4 w-4" />
               Deploy New Sequence
-            </button>
+            </Link>
           </div>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <div
-            key={stat.name}
-            className="relative overflow-hidden bg-slate-900 border border-slate-800 rounded-xl p-6 transition-all duration-200 hover:border-slate-700/80 group"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-400 group-hover:text-slate-300 transition-colors">
-                {stat.name}
-              </span>
-              <div className="p-2.5 rounded-lg bg-slate-800 border border-slate-700 text-indigo-400 group-hover:bg-indigo-600/10 group-hover:border-indigo-500/20 transition-all">
-                <stat.icon className="h-5 w-5" />
-              </div>
-            </div>
-            <div className="mt-4 flex items-baseline justify-between">
-              <span className="text-2xl font-bold tracking-tight text-white">
-                {stat.value}
-              </span>
-              <span className="inline-flex items-center text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                {stat.change}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Main Grid Content */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {/* Active Campaigns */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 lg:col-span-2 space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white">Active Campaigns</h2>
-            <button className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 inline-flex items-center gap-1">
-              View All <ArrowUpRight className="h-3 w-3" />
-            </button>
-          </div>
-          <div className="divide-y divide-slate-800">
-            {[
-              {
-                name: "US Mid-Market SaaS Founders",
-                enrolled: 450,
-                replyRate: "18.4%",
-                meetings: 12,
-                status: "ACTIVE",
-              },
-              {
-                name: "India FinTech Series A/B C-Suite",
-                enrolled: 250,
-                replyRate: "22.1%",
-                meetings: 9,
-                status: "ACTIVE",
-              },
-              {
-                name: "UK HR-Tech VPs & Directors",
-                enrolled: 142,
-                replyRate: "14.8%",
-                meetings: 7,
-                status: "ACTIVE",
-              },
-            ].map((sequence, idx) => (
-              <div key={idx} className="py-4 flex items-center justify-between first:pt-0 last:pb-0">
-                <div className="space-y-1">
-                  <p className="text-sm font-semibold text-slate-200">{sequence.name}</p>
-                  <p className="text-xs text-slate-500">{sequence.enrolled} leads enrolled</p>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center p-24 text-slate-500 gap-3">
+          <div className="h-8 w-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+          <span className="text-sm font-semibold">Gathering organizational statistics...</span>
+        </div>
+      ) : (
+        data && (
+          <div className="space-y-8">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {/* Total Leads */}
+              <div className="relative overflow-hidden bg-slate-900 border border-slate-800 rounded-xl p-6 transition-all hover:border-slate-700/80 group">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-slate-450">Leads Generated</span>
+                  <div className="p-2 bg-slate-800 border border-slate-700 text-indigo-400 rounded-lg group-hover:bg-indigo-600/10 group-hover:border-indigo-500/20 transition-all">
+                    <Users className="h-4.5 w-4.5" />
+                  </div>
                 </div>
-                <div className="flex items-center gap-6 text-right">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-200">{sequence.replyRate}</p>
-                    <p className="text-xs text-slate-500">Reply Rate</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-200">{sequence.meetings}</p>
-                    <p className="text-xs text-slate-500">Meetings</p>
-                  </div>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                    {sequence.status}
+                <div className="mt-4 flex items-baseline justify-between">
+                  <span className="text-3xl font-extrabold tracking-tight text-white">{data.totals.leads}</span>
+                  <span className="inline-flex items-center text-[10px] font-bold text-emerald-450 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                    <TrendingUp className="h-3 w-3 mr-1" /> +12.4%
                   </span>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Hot Leads / Inbox Quick-View */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white">Action Required</h2>
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">
-              3 Urgent
-            </span>
-          </div>
-          <div className="space-y-4">
-            {[
-              {
-                name: "Karan Sharma",
-                company: "Razorpay",
-                title: "VP of Product",
-                snippet: "This looks interesting. Can we connect on Thursday?",
-                time: "10m ago",
-                priority: "HIGH",
-              },
-              {
-                name: "Sarah Jenkins",
-                company: "Lattice",
-                title: "Director of HR",
-                snippet: "What are the pricing details? Send a brief deck first.",
-                time: "1h ago",
-                priority: "MEDIUM",
-              },
-              {
-                name: "Amit Patel",
-                company: "Groww",
-                title: "CTO",
-                snippet: "Who handles security compliance? Need details.",
-                time: "2h ago",
-                priority: "MEDIUM",
-              },
-            ].map((item, idx) => (
-              <div
-                key={idx}
-                className="p-3 bg-slate-950 border border-slate-850 rounded-lg hover:border-slate-800 transition-colors cursor-pointer space-y-1.5"
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-xs font-bold text-slate-200">{item.name}</p>
-                    <p className="text-[10px] text-slate-500">{item.title} at {item.company}</p>
+              {/* Contacted */}
+              <div className="relative overflow-hidden bg-slate-900 border border-slate-800 rounded-xl p-6 transition-all hover:border-slate-700/80 group">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-slate-450">Contacted (Outbound)</span>
+                  <div className="p-2 bg-slate-800 border border-slate-700 text-indigo-400 rounded-lg group-hover:bg-indigo-600/10 group-hover:border-indigo-500/20 transition-all">
+                    <GitFork className="h-4.5 w-4.5" />
                   </div>
-                  <span className="text-[10px] text-slate-500">{item.time}</span>
                 </div>
-                <p className="text-xs text-slate-400 line-clamp-1 italic">
-                  "{item.snippet}"
-                </p>
+                <div className="mt-4 flex items-baseline justify-between">
+                  <span className="text-3xl font-extrabold tracking-tight text-white">{data.totals.contacted}</span>
+                  <span className="text-[10px] text-slate-500 font-bold bg-slate-950 px-2.5 py-0.5 rounded-full border border-slate-800">
+                    Active Drips
+                  </span>
+                </div>
               </div>
-            ))}
+
+              {/* Replied */}
+              <div className="relative overflow-hidden bg-slate-900 border border-slate-800 rounded-xl p-6 transition-all hover:border-slate-700/80 group">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-slate-450">Positive Replies</span>
+                  <div className="p-2 bg-slate-800 border border-slate-700 text-indigo-400 rounded-lg group-hover:bg-indigo-600/10 group-hover:border-indigo-500/20 transition-all">
+                    <CheckCircle className="h-4.5 w-4.5" />
+                  </div>
+                </div>
+                <div className="mt-4 flex items-baseline justify-between">
+                  <span className="text-3xl font-extrabold tracking-tight text-white">{data.totals.replied}</span>
+                  <span className="inline-flex items-center text-[10px] font-bold text-emerald-450 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                    {data.rates.replyRate}% Reply rate
+                  </span>
+                </div>
+              </div>
+
+              {/* Meetings Booked */}
+              <div className="relative overflow-hidden bg-slate-900 border border-slate-800 rounded-xl p-6 transition-all hover:border-slate-700/80 group">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-slate-450">Meetings Booked</span>
+                  <div className="p-2 bg-slate-800 border border-slate-700 text-indigo-400 rounded-lg group-hover:bg-indigo-600/10 group-hover:border-indigo-500/20 transition-all">
+                    <Calendar className="h-4.5 w-4.5" />
+                  </div>
+                </div>
+                <div className="mt-4 flex items-baseline justify-between">
+                  <span className="text-3xl font-extrabold tracking-tight text-white">{data.totals.meetingsBooked}</span>
+                  <span className="inline-flex items-center text-[10px] font-bold text-emerald-450 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                    {data.rates.meetingRate}% Book rate
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Downward Row: Performance metrics & AI Costs details */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Performance charts */}
+              <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4 shadow-xl">
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                  <Activity className="h-4.5 w-4.5 text-indigo-500" />
+                  Campaign Conversion rates
+                </h2>
+                
+                <div className="grid grid-cols-3 gap-4 text-center py-4">
+                  <div className="bg-slate-950 p-4 border border-slate-850 rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Average Open Rate</span>
+                    <span className="text-2xl font-extrabold text-white">{data.rates.openRate}%</span>
+                  </div>
+                  <div className="bg-slate-950 p-4 border border-slate-850 rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Average Reply Rate</span>
+                    <span className="text-2xl font-extrabold text-white">{data.rates.replyRate}%</span>
+                  </div>
+                  <div className="bg-slate-950 p-4 border border-slate-850 rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Meeting Book Rate</span>
+                    <span className="text-2xl font-extrabold text-white">{data.rates.meetingRate}%</span>
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-850 pt-4 flex justify-between items-center text-xs">
+                  <span className="text-slate-400 font-semibold">Active outboxes warming up</span>
+                  <Link href="/settings/emails" className="text-indigo-400 hover:text-indigo-300 font-bold flex items-center gap-1">
+                    Manage Email Accounts <ArrowUpRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+              </div>
+
+              {/* AI Token Audit Usage details */}
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4 shadow-xl flex flex-col justify-between">
+                <div className="space-y-4">
+                  <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <Cpu className="h-4.5 w-4.5 text-indigo-500" />
+                    AI Agent Token Audits
+                  </h2>
+                  <p className="text-slate-400 text-xs leading-relaxed">
+                    Overview of API executions for Apollo lead enrichments, Gemini BANT qualifications, and cold email copywriting generations.
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-slate-950 p-3.5 border border-slate-850 rounded-xl">
+                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">API Queries Run</span>
+                      <span className="text-xl font-extrabold text-white mt-1 block">{data.aiUsage.callsCount}</span>
+                    </div>
+                    <div className="bg-slate-950 p-3.5 border border-slate-850 rounded-xl">
+                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Total cost USD</span>
+                      <span className="text-xl font-extrabold text-indigo-450 mt-1 block">${data.aiUsage.costUSD.toFixed(3)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-850 pt-4 flex justify-between items-center text-xs">
+                  <span className="text-slate-500 font-bold uppercase tracking-wider text-[9px]">Model: gemini-1.5-flash</span>
+                  <span className="text-emerald-450 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 text-[10px]">
+                    Quota healthy
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        )
+      )}
     </div>
   );
 }
