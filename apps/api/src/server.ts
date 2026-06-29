@@ -8,6 +8,7 @@ import icpRoutes from "./routes/icpRoutes";
 import leadRoutes from "./routes/leadRoutes";
 import emailRoutes from "./routes/emailRoutes";
 import sequenceRoutes from "./routes/sequenceRoutes";
+import copywritingRoutes from "./routes/copywritingRoutes";
 
 // Load environment variables
 dotenv.config();
@@ -39,6 +40,7 @@ app.use("/api/icp", icpRoutes);
 app.use("/api/leads", leadRoutes);
 app.use("/api/emails", emailRoutes);
 app.use("/api/sequences", sequenceRoutes);
+app.use("/api/copywriter", copywritingRoutes);
 
 // Health check endpoint
 app.get("/health", (req: Request, res: Response) => {
