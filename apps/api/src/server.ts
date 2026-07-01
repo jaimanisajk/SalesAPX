@@ -13,6 +13,8 @@ import inboxRoutes from "./routes/inboxRoutes";
 import qualificationRoutes from "./routes/qualificationRoutes";
 import meetingRoutes from "./routes/meetingRoutes";
 import analyticsRoutes from "./routes/analyticsRoutes";
+import integrationRoutes from "./routes/integrationRoutes";
+import superadminRoutes from "./routes/superadminRoutes";
 
 import "./services/queue/outreachWorker";
 
@@ -51,6 +53,8 @@ app.use("/api/inbox", inboxRoutes);
 app.use("/api/qualifications", qualificationRoutes);
 app.use("/api/meetings", meetingRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/integrations", integrationRoutes);
+app.use("/api/superadmin", superadminRoutes);
 
 // Health check endpoint
 app.get("/health", (req: Request, res: Response) => {

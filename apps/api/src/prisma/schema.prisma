@@ -33,6 +33,7 @@ model Organisation {
   aiLogs            AILog[]
   emailSettings     EmailSettings?
   emailAccounts     EmailAccount[]
+  integrationSetting IntegrationSetting?
 
   @@map("organisations")
 }
@@ -510,4 +511,19 @@ model EmailAccount {
   updatedAt       DateTime      @updatedAt
 
   @@map("email_accounts")
+}
+
+model IntegrationSetting {
+  id              String       @id @default(cuid())
+  orgId           String       @unique
+  hubspotEnabled  Boolean      @default(false)
+  hubspotToken    String?
+  slackEnabled    Boolean      @default(false)
+  slackWebhookUrl String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  
+  org             Organisation @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@map("integration_settings")
 }
