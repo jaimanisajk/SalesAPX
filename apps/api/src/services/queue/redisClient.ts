@@ -10,6 +10,10 @@ const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
 export const redisConnection = new Redis(redisUrl, {
   maxRetriesPerRequest: null,
   lazyConnect: true, // Don't crash immediately on startup if Redis is offline
+  retryStrategy(times) {
+    // Limit reconnection retries to every 60 seconds to prevent console logs flood
+    return 60000;
+  },
 });
 
 // Connection state checks
